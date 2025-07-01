@@ -1,0 +1,66 @@
+name: Deploy to EC2
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Debug environment variables
+        run: |
+          echo "Checking environment variables (secrets redacted)"
+          echo "EC2_HOST is set: ${{ secrets.EC2_HOST != '' }}"
+          echo "EC2_USERNAME is set: ${{ secrets.EC2_USERNAME != '' }}"
+          echo "EC2_SSH_KEY length: ${{ secrets.EC2_SSH_KEY != '' && '***' || 'not set' }}"
+
+      - name: Create docker-compose.override.yml
+        run: |
+          cat > docker-compose.override.yml << EOF
+          version: "3.8"
+          
+          services:
+            app:
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/reset-password-service:latest
+              environment:
+                - DATABASE_URL=${DATABASE_URL:-postgresql://auth_user:secret@postgres:5432/auth_db}
+                - JWT_SECRET=${JWT_SECRET:-development-jwt-secret}
+                - MESSAGE_BROKER_URL=${MESSAGE_BROKER_URL:-kafka://kafka:9092}
+          EOF
+
+      - name: Copy docker-compose files to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml,docker-compose.override.yml"
+          target: "~/reset-password-service"
+          debug: true
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/reset-password-service
+            
+            # Set environment variables for docker-compose
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export MESSAGE_BROKER_URL="${{ secrets.MESSAGE_BROKER_URL }}"
+            
+            # Pull latest image and restart service
+            docker-compose pull
+            docker-compose up -d
