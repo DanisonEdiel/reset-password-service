@@ -90,3 +90,17 @@ variable "email_from" {
   type        = string
   default     = "noreply@example.com"
 }
+
+variable "create_resources" {
+  description = "Mapa de recursos a crear (true) o no crear (false)"
+  type        = map(bool)
+  default     = {
+    security_groups = true
+    key_pair        = true
+    db_subnet_group = true
+    ecs_cluster     = true
+    log_group       = true
+    iam_role        = true
+    target_group    = true
+  }
+}

@@ -1,0 +1,38 @@
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files, which are likely to contain sensitive data
+*.tfvars
+!terraform.tfvars.example
+
+# Ignore override files as they are usually used for local development
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore AWS credentials file
+set-aws-credentials.ps1
+.set-aws-credentials.example.ps1
+.variables.tfvars
+# Ignore Lambda function packages
+*.zip
+
+# Ignore local environment files
+.env
+.env.*
+
+# Ignore lock files
+.terraform.lock.hcl

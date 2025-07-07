@@ -48,23 +48,23 @@ resource "aws_ecs_task_definition" "this" {
         },
         {
           name  = "POSTGRES_USER"
-          value = "postgres"
+          value = local.db_username
         },
         {
           name  = "POSTGRES_PASSWORD"
-          value = var.db_password
+          value = local.db_password
         },
         {
           name  = "POSTGRES_HOST"
-          value = aws_db_instance.postgres.endpoint
+          value = local.db_host
         },
         {
           name  = "POSTGRES_PORT"
-          value = "5432"
+          value = tostring(local.db_port)
         },
         {
           name  = "POSTGRES_DB"
-          value = "auth_db"
+          value = local.db_name
         },
         {
           name  = "SMTP_USERNAME"

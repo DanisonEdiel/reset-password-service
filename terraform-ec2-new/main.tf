@@ -90,29 +90,24 @@ resource "aws_security_group" "ecs" {
   }
 }
 
-resource "aws_security_group" "postgres" {
-  name        = "${var.app_name}-postgres-sg"
-  description = "Security group for PostgreSQL"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
+# En lugar de crear un nuevo grupo de seguridad para PostgreSQL, usamos el existente
+# Obtenemos el grupo de seguridad de la base de datos RDS existente
+data "aws_security_group" "auth_db_sg" {
+  filter {
+    name   = "group-name"
+    values = ["auth-postgres-sg"]
   }
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "${var.app_name}-postgres-sg"
-    Environment = var.environment
-  }
+# Creamos una regla de ingreso en el grupo de seguridad existente para permitir conexiones desde nuestro servicio
+resource "aws_security_group_rule" "reset_password_to_rds" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = data.aws_security_group.auth_db_sg.id
+  source_security_group_id = aws_security_group.ecs.id
+  description              = "Allow PostgreSQL access from reset-password service"
 }
 
 # Load Balancer

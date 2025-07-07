@@ -5,7 +5,7 @@ output "alb_dns_name" {
 
 output "rds_endpoint" {
   description = "Endpoint of the RDS instance"
-  value       = aws_db_instance.postgres.endpoint
+  value       = data.aws_db_instance.auth_db.endpoint
   sensitive   = true
 }
 
